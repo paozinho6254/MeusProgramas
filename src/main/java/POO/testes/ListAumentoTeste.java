@@ -1,6 +1,6 @@
-package testes;
+package POO.testes;
 
-import entidades.ListAumento;
+import POO.entidades.ListAumento;
 
 import java.util.ArrayList;
 import java.util.List;

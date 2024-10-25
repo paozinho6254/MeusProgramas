@@ -1,7 +1,7 @@
-package testes;
+package POO.testes;
 
 import java.util.Scanner;
-import entidades.Estoque; 
+import POO.entidades.Estoque; 
 
 public class EstoqueTeste {
 

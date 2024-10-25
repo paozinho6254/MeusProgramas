@@ -1,7 +1,7 @@
-package testes;
+package POO.testes;
 
 import java.util.Scanner;
-import entidades.Vet;
+import POO.entidades.Vet;
 
 public class Vet2Teste {
 	public static void main(String[] args) {

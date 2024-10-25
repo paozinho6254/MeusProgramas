@@ -1,7 +1,7 @@
-package testes;
+package POO.testes;
 
 import java.util.Scanner;
-import entidades.ContaBanco;
+import POO.entidades.ContaBanco;
 
 public class ContaBancoTeste {
 	public static void main(String[] args) {

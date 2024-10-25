@@ -1,4 +1,4 @@
-package POO.src.entidades;
+package POO.entidades;
 
 public class ContaBanco {
 	private int numConta;

@@ -1,7 +1,7 @@
-package testes;
+package POO.testes;
 
 import java.util.Scanner;
-import entidades.Retangulo;
+import POO.entidades.Retangulo;
 
 public class RetanguloTeste {
 	public static void main(String[] args) {

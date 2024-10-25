@@ -1,4 +1,4 @@
-package entidades;
+package POO.entidades;
 
 public class Estoque {
 	

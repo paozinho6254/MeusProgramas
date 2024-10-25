@@ -1,8 +1,8 @@
-package testes;
+package POO.testes;
 
 import java.util.Scanner;
 
-import entidades.Vet;
+import POO.entidades.Vet;
 
 public class VetTeste {
 	public static void main(String[] args) {

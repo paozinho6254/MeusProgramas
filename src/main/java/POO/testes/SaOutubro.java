@@ -1,4 +1,4 @@
-package testes;
+package POO.testes;
 
 import java.util.Scanner;
 

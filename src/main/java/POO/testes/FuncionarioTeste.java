@@ -1,6 +1,6 @@
-package testes;
+package POO.testes;
 
-import entidades.Funcionario;
+import POO.entidades.Funcionario;
 import java.util.Scanner;
 
 public class FuncionarioTeste {

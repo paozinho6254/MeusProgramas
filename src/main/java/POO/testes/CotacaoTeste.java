@@ -1,6 +1,6 @@
-package testes;
+package POO.testes;
 
-import entidades.Cotacao;
+import POO.entidades.Cotacao;
 import java.util.Scanner;
 
 public class CotacaoTeste {

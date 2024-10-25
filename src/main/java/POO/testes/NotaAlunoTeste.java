@@ -1,6 +1,6 @@
-package testes;
+package POO.testes;
 
-import entidades.NotaAluno;
+import POO.entidades.NotaAluno;
 import java.util.Scanner;
 
 public class NotaAlunoTeste {
