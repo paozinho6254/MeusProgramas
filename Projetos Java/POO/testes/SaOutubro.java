@@ -132,9 +132,12 @@ public class ReservaSalasTeste {
             	}
             	//sala e horário que vai cancelar
             	else {
-            		System.out.println("Sala para cancelar a reserva: ");
+            		System.out.print("Sala para cancelar a reserva: ");
             		salaUser = input.nextInt();
-				}
+			System.out.print("Horário para cancelar a reserva: ");
+			horarioUser = input.nextInt();
+			reservas[salaUser-1][horarioUser-1] = "Livre";
+		}
             	break;
             case 4:
                 System.out.println("Programa Finalizado!");
