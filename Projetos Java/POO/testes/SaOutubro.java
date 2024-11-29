@@ -1,8 +1,8 @@
-package POO.testes;
+package testes;
 
 import java.util.Scanner;
 
-public class SaOutubro {
+public class ReservaSalasTeste {
     
     public static void main(String[] args) {
         Scanner input = new Scanner(System.in);
@@ -27,9 +27,10 @@ public class SaOutubro {
             do {
         	System.out.print("\n"
                     +"Menu:\n"
-                    +"1. Criar reserva\r\n"
+                    + "1. Criar reserva\r\n"
                     + "2. Acompanhar reserva\r\n"
-                    + "3. Sair\n"
+                    + "3. Cancelar reserva\r\n"
+                    + "4. Sair\n"
                     + "\nDigite o código da ação: ");
             resp = input.nextInt();
             if(resp < 1 || resp > 3) {
@@ -114,11 +115,33 @@ public class SaOutubro {
                 break; 
            
             case 3:
+            	System.out.print("Digite o nome da reserva: ");
+            	nomes = input.next();
+            	int salasReservadas = 0;
+            	
+            	for(int sala = 0; sala < reservas.length; sala++) {                  
+                    for(int horario = 0; horario < 12; horario++) {
+                    	if(reservas[sala][horario].equals(nomes)) {
+                    		++salasReservadas;
+                    		System.out.println(salasReservadas+"Resersa da sala "+(sala+1)+" no horário das "+(horario+8)+".");
+                    	}
+                    }
+            	}
+            	if(salasReservadas == 0) {
+            		System.out.println("Nenhuma reserva com este nome encontrada!\n");
+            	}
+            	//sala e horário que vai cancelar
+            	else {
+            		System.out.println("Sala para cancelar a reserva: ");
+            		salaUser = input.nextInt();
+				}
+            	break;
+            case 4:
                 System.out.println("Programa Finalizado!");
                 break;
             }
         
-        }while(resp != 3);
+        }while(resp != 4);
         
         input.close();
     }
