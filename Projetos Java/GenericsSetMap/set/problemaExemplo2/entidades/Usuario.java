@@ -6,8 +6,6 @@ import java.util.Objects;
 
 public class Usuario {
 	
-	DateTimeFormatter fmtPadrao = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-	
 	String nomeString;
 	Date horario;
 	
