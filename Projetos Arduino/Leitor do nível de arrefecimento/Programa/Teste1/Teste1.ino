@@ -20,10 +20,13 @@
     - esp32-hal-ledc.h
 */
 
+#define CAMERA_MODEL_AI_THINKER
+
 #include "esp_camera.h"
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
+#include "SPIFFS.h"
 
 // Defina pinos conforme módulo AI Thinker
 #define PWDN_GPIO_NUM     32
@@ -43,7 +46,7 @@
 #define VSYNC_GPIO_NUM    25
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
-
+#define FLASH_PIN 4
 #define SD_CS_PIN         13
 
 // Configuração de pastas
@@ -84,9 +87,13 @@ void setup() {
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG; 
-
-  config.frame_size = FRAMESIZE_QQVGA; // 160x120, leve para comparação
-  config.jpeg_quality = 12; // piores, menor tamanho
+  SPI.begin(14, 2, 15, SD_CS_PIN);  // SCK, MISO, MOSI, SS
+  SD.begin(SD_CS_PIN);
+  pinMode(FLASH_PIN, OUTPUT);
+  digitalWrite(FLASH_PIN, LOW);
+  
+  config.frame_size = FRAMESIZE_QVGA; // 160x120, leve para comparação
+  config.jpeg_quality = 10; // piores, menor tamanho
   config.fb_count = 1;
 
   if (esp_camera_init(&config) != ESP_OK) {
@@ -96,6 +103,9 @@ void setup() {
   Serial.println("Camera OK");
 
   // Inicializa SD
+  Serial.println("Inicializando SPI...");
+  SPI.begin(14, 2, 15, SD_CS_PIN); // SCK, MISO, MOSI, SS
+  Serial.println("Inicializando SD...");
   if (!SD.begin(SD_CS_PIN)) {
     Serial.println("Falha ao inicializar cartão SD!");
     while (1);
@@ -104,6 +114,7 @@ void setup() {
 
   // Cria pasta de padrões se não existir
   if (!SD.exists(patterns_folder)) {
+    Serial.println("Existe Sd?");
     SD.mkdir(patterns_folder);
   }
 
@@ -171,7 +182,12 @@ void loop() {
       SD.remove(temp_photo); // Limpa foto temporária
       printMenu();
     }
-    else if (opt == "4") {
+    else if (opt == "4"){
+      Serial.println("Listando padrões...");
+      listPatterns();
+      printMenu();
+    }
+    else if (opt == "5") {
       Serial.println("Encerrando e reiniciando ESP...");
       delay(1000);
       ESP.restart();
@@ -190,7 +206,8 @@ void printMenu() {
   Serial.println("1 - Cadastrar porcentagem");
   Serial.println("2 - Excluir porcentagem");
   Serial.println("3 - Tirar medida");
-  Serial.println("4 - Encerrar programa");
+  Serial.println("4 - Listar padrões");
+  Serial.println("5 - Encerrar programa");
   Serial.println("> Escolha uma opção:");
 }
 
@@ -211,8 +228,20 @@ String readLineSerial() {
 
 // Tira foto, salva no SD
 bool takePhotoSaveSD(String filepath) {
+  
+  // Ligar o flash
+digitalWrite(FLASH_PIN, HIGH);
+delay(100); // espera um pouco para estabilizar a iluminação
+// Captura da imagem
   camera_fb_t *fb = esp_camera_fb_get();
-  if (!fb) return false;
+  if (!fb) {
+    Serial.println("Erro ao capturar imagem");
+    digitalWrite(FLASH_PIN, LOW); // garantir que desligue mesmo com erro
+    return false;
+  }
+
+// Desligar o flash após capturar
+  digitalWrite(FLASH_PIN, LOW);
 
   File file = SD.open(filepath.c_str(), FILE_WRITE);
   if (!file) {
@@ -251,47 +280,71 @@ void listPatterns() {
   dir.close();
 }
 
-// Compara duas imagens (hash simples)
 float compareImages(const String &img1, const String &img2) {
-  // Abre arquivos, lê alguns bytes e faz "hash" simples para similaridade
+  const int N = 2048; // Lê mais bytes
+  uint8_t buf1[N], buf2[N];
+
   File f1 = SD.open(img1.c_str());
   File f2 = SD.open(img2.c_str());
   if (!f1 || !f2) {
     if (f1) f1.close();
     if (f2) f2.close();
-    return 1.0; // 100% diferente se algo não abriu
+    return 1.0; // falha
   }
-  // Lê primeiros 512 bytes de cada (ou menos)
-  const int N = 512;
-  uint8_t buf1[N], buf2[N];
-  int len1 = f1.read(buf1, N);
-  int len2 = f2.read(buf2, N);
+
+  int len1 = f1.size();
+  int len2 = f2.size();
+  int start1 = max(0, len1 - N);
+  int start2 = max(0, len2 - N);
+
+  f1.seek(start1);
+  f2.seek(start2);
+
+  int read1 = f1.read(buf1, N);
+  int read2 = f2.read(buf2, N);
+
   f1.close(); f2.close();
-  int minlen = min(len1, len2);
+
+  int minlen = min(read1, read2);
   if (minlen == 0) return 1.0;
+
   int diff = 0;
   for (int i = 0; i < minlen; i++) {
     diff += abs(buf1[i] - buf2[i]);
   }
-  float perc = float(diff) / (255.0 * minlen); // 0.0 = igual, 1.0 = máximo diferente
-  return perc;
+
+  return float(diff) / (255.0 * minlen); // 0 = igual, 1 = diferente
 }
 
 // Localiza padrão mais próximo
+
+
+
+
+
 String findNearestPattern(const String &photoPath, int &best_match) {
   File dir = SD.open(patterns_folder);
   float min_diff = 2.0;
   String best_file = "";
   int best_porc = -1;
+
   while (true) {
     File entry = dir.openNextFile();
     if (!entry) break;
     String fname = entry.name();
     if (fname.endsWith(".jpg")) {
       float diff = compareImages(photoPath, fname);
+      
+      // DEBUG: Mostrar comparação
+      Serial.print("Comparando com ");
+      Serial.print(fname);
+      Serial.print(" -> Diferença: ");
+      Serial.println(diff);
+
       int idx1 = fname.lastIndexOf('/');
       int idx2 = fname.lastIndexOf('.');
       int porc = fname.substring(idx1 + 1, idx2).toInt();
+
       if (diff < min_diff) {
         min_diff = diff;
         best_file = fname;
@@ -304,3 +357,35 @@ String findNearestPattern(const String &photoPath, int &best_match) {
   best_match = best_porc;
   return best_file;
 }
+
+
+
+
+//
+//
+//String findNearestPattern(const String &photoPath, int &best_match) {
+//  File dir = SD.open(patterns_folder);
+//  float min_diff = 2.0;
+//  String best_file = "";
+//  int best_porc = -1;
+//  while (true) {
+//    File entry = dir.openNextFile();
+//    if (!entry) break;
+//    String fname = entry.name();
+//    if (fname.endsWith(".jpg")) {
+//      float diff = compareImages(photoPath, fname);
+//      int idx1 = fname.lastIndexOf('/');
+//      int idx2 = fname.lastIndexOf('.');
+//      int porc = fname.substring(idx1 + 1, idx2).toInt();
+//      if (diff < min_diff) {
+//        min_diff = diff;
+//        best_file = fname;
+//        best_porc = porc;
+//      }
+//    }
+//    entry.close();
+//  }
+//  dir.close();
+//  best_match = best_porc;
+//  return best_file;
+//}
