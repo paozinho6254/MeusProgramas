@@ -184,10 +184,6 @@ void loop() {
 //      Serial.println("Porcentagem mais próxima: " + String(best_match) + "%");
 //      Serial.println("Arquivo correspondente: " + result);
 //    }
-      
-    if(tempAtual > 2){
-      tempAtual = 0;
-    }  
 
     if(tempAtual == 0){
       Serial.println("Porcentagem mais próxima: 50%");
@@ -199,7 +195,12 @@ void loop() {
       Serial.println("Porcentagem mais próxima: 0%");
     }
     tempAtual++;
-    SD.remove(temp_photo); // Limpa foto temporária
+    SD.remove(temp_photo);
+    if(tempAtual > 2){
+      tempAtual = 0;
+    }  
+    Serial.println();
+    Serial.print(tempAtual);
     printMenu();
     }
     else if (opt == "4"){
