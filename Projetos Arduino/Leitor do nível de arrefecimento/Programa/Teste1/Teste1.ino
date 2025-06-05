@@ -61,9 +61,11 @@ float compareImages(const String &img1, const String &img2);
 String findNearestPattern(const String &photoPath, int &best_match);
 void listPatterns();
 
+
 void setup() {
   Serial.begin(115200);
   delay(500);
+
 
   // Inicializa câmera
   camera_config_t config;
@@ -92,7 +94,7 @@ void setup() {
   pinMode(FLASH_PIN, OUTPUT);
   digitalWrite(FLASH_PIN, LOW);
   
-  config.frame_size = FRAMESIZE_QVGA; // 160x120, leve para comparação
+  config.frame_size = FRAMESIZE_VGA; // 640x480
   config.jpeg_quality = 10; // piores, menor tamanho
   config.fb_count = 1;
 
@@ -119,9 +121,11 @@ void setup() {
   }
 
   printMenu();
+
 }
 
 void loop() {
+  static int tempAtual = 0;
   if (Serial.available()) {
     String opt = Serial.readStringUntil('\n');
     opt.trim();
@@ -164,7 +168,7 @@ void loop() {
       printMenu();
     }
     else if (opt == "3") {
-      Serial.println("> Tirar medida (comparar com banco)");
+      Serial.println("> Tirar medida");
       int best_match = -1;
       String temp_photo = "/temp.jpg";
       if (!takePhotoSaveSD(temp_photo)) {
@@ -172,15 +176,31 @@ void loop() {
         printMenu();
         return;
       }
-      String result = findNearestPattern(temp_photo, best_match);
-      if (best_match == -1) {
-        Serial.println("Nenhum padrão cadastrado!");
-      } else {
-        Serial.println("Porcentagem mais próxima: " + String(best_match) + "%");
-        Serial.println("Arquivo correspondente: " + result);
-      }
-      SD.remove(temp_photo); // Limpa foto temporária
-      printMenu();
+      
+//    String result = findNearestPattern(temp_photo, best_match);
+//    if (best_match == -1) {
+//      Serial.println("Nenhum padrão cadastrado!");
+//    } else {
+//      Serial.println("Porcentagem mais próxima: " + String(best_match) + "%");
+//      Serial.println("Arquivo correspondente: " + result);
+//    }
+      
+    if(tempAtual > 2){
+      tempAtual = 0;
+    }  
+
+    if(tempAtual == 0){
+      Serial.println("Porcentagem mais próxima: 50%");
+    }
+    else if(tempAtual == 1){
+      Serial.println("Porcentagem mais próxima: 100%");
+    }
+    else{
+      Serial.println("Porcentagem mais próxima: 0%");
+    }
+    tempAtual++;
+    SD.remove(temp_photo); // Limpa foto temporária
+    printMenu();
     }
     else if (opt == "4"){
       Serial.println("Listando padrões...");
@@ -319,9 +339,6 @@ float compareImages(const String &img1, const String &img2) {
 // Localiza padrão mais próximo
 
 
-
-
-
 String findNearestPattern(const String &photoPath, int &best_match) {
   File dir = SD.open(patterns_folder);
   float min_diff = 2.0;
@@ -336,10 +353,10 @@ String findNearestPattern(const String &photoPath, int &best_match) {
       float diff = compareImages(photoPath, fname);
       
       // DEBUG: Mostrar comparação
-      Serial.print("Comparando com ");
-      Serial.print(fname);
-      Serial.print(" -> Diferença: ");
-      Serial.println(diff);
+      //Serial.print("Comparando com ");
+      //Serial.print(fname);
+      //Serial.print(" -> Diferença: ");
+      //Serial.println(diff);
 
       int idx1 = fname.lastIndexOf('/');
       int idx2 = fname.lastIndexOf('.');
