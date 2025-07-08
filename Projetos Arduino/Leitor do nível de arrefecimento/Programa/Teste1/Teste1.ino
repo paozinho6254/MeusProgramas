@@ -22,11 +22,14 @@
 
 #define CAMERA_MODEL_AI_THINKER
 
+#include <LiquidCrystal.h>
 #include "esp_camera.h"
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
 #include "SPIFFS.h"
+#include <WiFi.h>   
+#include <WebServer.h> 
 
 // Defina pinos conforme módulo AI Thinker
 #define PWDN_GPIO_NUM     32
@@ -60,6 +63,11 @@ bool deletePattern(int porcentagem);
 float compareImages(const String &img1, const String &img2);
 String findNearestPattern(const String &photoPath, int &best_match);
 void listPatterns();
+const char* ssid = "SUA_REDE_WIFI";
+const char* password = "SUA_SENHA_WIFI";  
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2); // Ajuste os pinos conforme sua ligação
+
+
 
 
 void setup() {
@@ -120,6 +128,18 @@ void setup() {
     SD.mkdir(patterns_folder);
   }
 
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", handleRoot); // Quando acessar "/" chama handleRoot
+  server.begin();
+  
   printMenu();
 
 }
@@ -184,16 +204,23 @@ void loop() {
 //      Serial.println("Porcentagem mais próxima: " + String(best_match) + "%");
 //      Serial.println("Arquivo correspondente: " + result);
 //    }
-
+    int porcentagem; 
     if(tempAtual == 0){
       Serial.println("Porcentagem mais próxima: 50%");
+      porcentagem = 50;
     }
     else if(tempAtual == 1){
       Serial.println("Porcentagem mais próxima: 100%");
+      porcentagem = 100;
     }
     else{
       Serial.println("Porcentagem mais próxima: 0%");
+      porcentagem = 0;
     }
+
+    retornaLcd(porcentagem);
+    server.handleClient(porcentagem);
+    
     tempAtual++;
     SD.remove(temp_photo);
     if(tempAtual > 2){
@@ -201,6 +228,7 @@ void loop() {
     }  
     Serial.println();
     Serial.print(tempAtual);
+
     printMenu();
     }
     else if (opt == "4"){
@@ -337,6 +365,14 @@ float compareImages(const String &img1, const String &img2) {
   return float(diff) / (255.0 * minlen); // 0 = igual, 1 = diferente
 }
 
+void handleRoot(int porcentagem) {
+  String html = "<!DOCTYPE html><html><body>";
+  html += "<h1>Valor da Porcentagem</h1>";
+  html += "<p>Porcentagem: " + String(porcentagem, 2) + "%</p>";
+  html += "</body></html>";
+  server.send(200, "text/html", html);
+}
+
 // Localiza padrão mais próximo
 
 
@@ -376,7 +412,14 @@ String findNearestPattern(const String &photoPath, int &best_match) {
   return best_file;
 }
 
-
+void retornaLcd (int porcentagem){
+  lcd.clear(); // Limpa o display
+  lcd.setCursor(0, 0); // Primeira linha
+  lcd.print("Arrefecimento:");
+  lcd.setCursor(0, 1); // Segunda linha
+  lcd.print(percentual);
+  lcd.print("%");
+}
 
 
 //
